@@ -32,6 +32,15 @@ const defaultLang = computed(
 
 const langCodes = computed(() => languages.value.map((l) => l.code))
 
+/**
+ * themeConfig.limooo.langSegmentAlways：内容页路径是否**总是**带语言段
+ * （含默认语言，如 /video-platform/zh-cn）。默认 false = 旧行为（默认语言无后缀）。
+ * 首页永远是例外：`/` 就是默认语言。
+ */
+const langSegmentAlways = computed(
+  () => (limooo.value as any).langSegmentAlways === true
+)
+
 /** 语言码是路径的最后一段：/video-platform/en-us；默认语言无后缀。 */
 function langOfPath(path: string): string {
   const segments = path.split('?')[0].split('/').filter(Boolean)
@@ -47,8 +56,11 @@ function pathForLang(code: string): string {
     segments.pop()
   }
   const base = segments.length ? '/' + segments.join('/') : '/'
-  if (code === defaultLang.value) return base
-  return `${base === '/' ? '' : base}/${code}`
+  // 首页：`/` 是默认语言，其它语言是 /en-us、/ja-jp…
+  if (base === '/') return code === defaultLang.value ? '/' : `/${code}`
+  // 内容页：默认语言要不要后缀由 langSegmentAlways 决定
+  if (code === defaultLang.value && !langSegmentAlways.value) return base
+  return `${base}/${code}`
 }
 
 const brandLink = computed(() => {
